@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import TextField from "@mui/material/TextField";
 
 interface Pokemon {
   id: number;
@@ -32,9 +33,21 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null); // Pour capturer les erreurs
   const langage = ["en", "fr"];
-  const shiny = ["image", "image_shiny"];
-  const selectedImg = shiny[0];
+  const shiny: (keyof Pokemon)[] = ["image", "image_shiny"];
+  const selectedImg: keyof Pokemon = shiny[0];
   const selectedLang = langage[1];
+  const [inputText, setInputText] = useState("");
+
+  let inputHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+    //convert input text to lower case
+
+    var lowerCase = e.target.value.toLowerCase();
+
+    setInputText(lowerCase);
+  };
+
+
 
   useEffect(() => {
     async function fetchData() {
@@ -53,7 +66,11 @@ export default function Page() {
         setDataPoke(jsonPoke.data);
       } catch (error) {
         console.error("❌ Erreur lors du fetch :", error);
-        setError(error.message);
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError("An unknown error occurred");
+        }
       } finally {
         setLoading(false);
       }
@@ -67,37 +84,55 @@ export default function Page() {
   if (!dataPoke || dataPoke.length === 0) return <p>Aucun Pokémon trouvé.</p>;
 
   return (
-    <>
-      <h1>Liste des Pokémon</h1>
-      {dataPoke.map((pokemon) => (
-        <ul key={pokemon.id} id={pokemon.id}>
-          <p>#{pokemon.id}</p>
-          <p>{pokemon.name[selectedLang]}</p>
-          <img src={pokemon[selectedImg]} alt={pokemon.name[selectedLang]} />
-          <p>height {pokemon.height}</p>
-          <p>weight {pokemon.weight}</p>
-          <p>stats</p>
-          <p>healt point {pokemon.stats.hp}</p>
-          <p>attack {pokemon.stats.atk}</p>
-          <p>defence {pokemon.stats.def}</p>
-          <p>special attack {pokemon.stats.spe_atk}</p>
-          <p>special defence {pokemon.stats.spe_def}</p>
-          <p>speed {pokemon.stats.vit}</p>
+    <div className="p-4">
+      <TextField
+        id="outlined-basic"
+        variant="outlined"
+        fullWidth
+        label="Search"
+        onChange={inputHandler}
+        className="mb-4"
+      />
+      <h1 className="text-2xl font-bold text-center mb-6">Liste des Pokémon</h1>
 
-          {dataType.map((type) => {
-            if (pokemon.types.includes(type.id)) {
-              return <p key={type.id}>
-                <img src={type.image} alt={type.name[selectedLang]} />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {dataPoke
+          .filter((pokemon) =>
+            pokemon.name[selectedLang as keyof typeof pokemon.name].toLowerCase().includes(inputText.toLowerCase())
+          )
+          .map((pokemon) => (
+            <div key={pokemon.id} className="bg-gray-200 rounded-lg p-4 shadow-md border-2 border-yellow-500 flex flex-col items-center">
+              <p className="text-gray-700 font-bold">#{pokemon.id}</p>
+              <img className="w-20 h-20 my-2" src={pokemon[selectedImg] as string} alt={pokemon.name[selectedLang]} />
+              <p className="text-center text-lg font-semibold">{pokemon.name[selectedLang]}</p>
 
-                {type.name[selectedLang]}
+              {/* Types */}
+              <div className="flex justify-center space-x-2 mt-2">
+                {dataType.map((type) =>
+                  pokemon.types.includes(type.id) ? (
+                    <div key={type.id} className="flex items-center bg-white rounded-full px-2 py-1 shadow">
+                      <img className="w-5 h-5 mr-1" src={type.image} alt={type.name[selectedLang]} />
+                      <span className="text-sm font-medium">{type.name[selectedLang]}</span>
+                    </div>
+                  ) : null
+                )}
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
 
-
-              </p>;
-            }
-          }
-          )}
-        </ul>
-      ))}
-    </>
   );
 }
+
+
+
+{/* <p>height {pokemon.height}</p>
+            <p>weight {pokemon.weight}</p>
+            <p>stats</p>
+            <p>healt point {pokemon.stats.hp}</p>
+            <p>attack {pokemon.stats.atk}</p>
+            <p>defence {pokemon.stats.def}</p>
+            <p>special attack {pokemon.stats.spe_atk}</p>
+            <p>special defence {pokemon.stats.spe_def}</p>
+            <p>speed {pokemon.stats.vit}</p> */}
